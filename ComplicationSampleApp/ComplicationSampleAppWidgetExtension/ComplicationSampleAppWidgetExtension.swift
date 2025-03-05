@@ -2,7 +2,7 @@
 //  ComplicationSampleAppWidgetExtension.swift
 //  ComplicationSampleAppWidgetExtension
 //
-//  Created by daisuke on 2025/03/03.
+//  Created by  on 2025/03/03.
 //
 
 import WidgetKit
@@ -10,23 +10,22 @@ import SwiftUI
 
 struct Provider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: ConfigurationAppIntent())
+        SimpleEntry(date: Date(), text: "Sample")
     }
 
     func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
-        SimpleEntry(date: Date(), configuration: configuration)
+        SimpleEntry(date: Date(), text: "Snapshot")
     }
     
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
-        var entries: [SimpleEntry] = []
-
-        // Generate a timeline consisting of five entries an hour apart, starting from the current date.
-        let currentDate = Date()
-        for hourOffset in 0 ..< 5 {
-            let entryDate = Calendar.current.date(byAdding: .hour, value: hourOffset, to: currentDate)!
-            let entry = SimpleEntry(date: entryDate, configuration: configuration)
-            entries.append(entry)
-        }
+        let entries = [
+            SimpleEntry(date: Date(), text: "Now"),
+            SimpleEntry(date: Calendar.current.date(byAdding: .minute, value: 1, to: Date())!, text: "1 min"),
+            SimpleEntry(date: Calendar.current.date(byAdding: .minute, value: 2, to: Date())!, text: "2 min"),
+            SimpleEntry(date: Calendar.current.date(byAdding: .minute, value: 3, to: Date())!, text: "3 min"),
+            SimpleEntry(date: Calendar.current.date(byAdding: .minute, value: 4, to: Date())!, text: "4 min"),
+            SimpleEntry(date: Calendar.current.date(byAdding: .minute, value: 5, to: Date())!, text: "5 min")
+                ]
 
         return Timeline(entries: entries, policy: .atEnd)
     }
@@ -43,22 +42,15 @@ struct Provider: AppIntentTimelineProvider {
 
 struct SimpleEntry: TimelineEntry {
     let date: Date
-    let configuration: ConfigurationAppIntent
+    let text: String
 }
 
 struct ComplicationSampleAppWidgetExtensionEntryView : View {
-    var entry: Provider.Entry
-
+    var entry: SimpleEntry
     var body: some View {
-        VStack {
-            HStack {
-                Text("Time:")
-                Text(entry.date, style: .time)
-            }
-        
-            Text("Favorite Emoji:")
-            Text(entry.configuration.favoriteEmoji)
-        }
+        Text(entry.text)
+            .font(.system(size: 12))
+            .minimumScaleFactor(0.5)
     }
 }
 
@@ -67,30 +59,19 @@ struct ComplicationSampleAppWidgetExtension: Widget {
     let kind: String = "ComplicationSampleAppWidgetExtension"
 
     var body: some WidgetConfiguration {
+        
         AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
             ComplicationSampleAppWidgetExtensionEntryView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
+        .configurationDisplayName("My Complication")
+        .description("This is a sample complication.")
+        .supportedFamilies([
+            .accessoryCircular,    // 丸型
+            .accessoryInline,      // テキストのみ
+            .accessoryRectangular  // 長方形
+        ])
     }
 }
 
-extension ConfigurationAppIntent {
-    fileprivate static var smiley: ConfigurationAppIntent {
-        let intent = ConfigurationAppIntent()
-        intent.favoriteEmoji = "😀"
-        return intent
-    }
-    
-    fileprivate static var starEyes: ConfigurationAppIntent {
-        let intent = ConfigurationAppIntent()
-        intent.favoriteEmoji = "🤩"
-        return intent
-    }
-}
 
-#Preview(as: .accessoryRectangular) {
-    ComplicationSampleAppWidgetExtension()
-} timeline: {
-    SimpleEntry(date: .now, configuration: .smiley)
-    SimpleEntry(date: .now, configuration: .starEyes)
-}    
